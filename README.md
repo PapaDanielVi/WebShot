@@ -1,6 +1,10 @@
-# WebShot
+# WebShot: Full-Page and Area Screenshot Chrome Extension
 
-A Google Chrome extension built on Manifest V3 for capturing full-page scrolling screenshots, cropped rectangular selections, and visible browser viewports.
+[![Latest Release](https://img.shields.io/github/v/release/PapaDanielVi/WebShot?color=2563eb&style=flat-square)](https://github.com/PapaDanielVi/WebShot/releases/latest)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-10b981?style=flat-square)](manifest.json)
+[![Platform](https://img.shields.io/badge/Platform-Google%20Chrome-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://github.com/PapaDanielVi/WebShot)
+
+A Google Chrome extension built on Manifest V3 for capturing full-page scrolling screenshots, cropped rectangular selections, and visible browser viewports with zero DOM pollution.
 
 Author: Daniel ([github.com/PapaDanielVi](https://github.com/PapaDanielVi))
 
