@@ -1,0 +1,11 @@
+# Build and distribution artifacts
+dist/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class

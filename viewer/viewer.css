@@ -1,0 +1,247 @@
+:root {
+  --bg-workspace: #0b0f19;
+  --bg-toolbar: #111827;
+  --bg-btn: #1f2937;
+  --bg-btn-hover: #374151;
+  --text-main: #f9fafb;
+  --text-muted: #9ca3af;
+  --border-main: rgba(255, 255, 255, 0.1);
+  --accent-primary: #2563eb;
+  --accent-primary-hover: #1d4ed8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-workspace);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.viewer-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+}
+
+.toolbar {
+  height: 56px;
+  background-color: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border-main);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+  z-index: 100;
+  gap: 16px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.brand-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+}
+
+.brand-title {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+}
+
+.meta-divider {
+  width: 1px;
+  height: 20px;
+  background-color: var(--border-main);
+}
+
+.file-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.meta-filename {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.meta-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.toolbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-btn);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-main);
+  gap: 2px;
+}
+
+.tool-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.tool-btn:hover {
+  background: var(--bg-btn-hover);
+  color: var(--text-main);
+}
+
+.tool-btn-pill {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tool-btn-pill:hover {
+  background: var(--bg-btn-hover);
+  color: var(--text-main);
+}
+
+.tool-btn-pill.active {
+  background: rgba(37, 99, 235, 0.25);
+  color: #60a5fa;
+}
+
+.zoom-display {
+  font-size: 11px;
+  font-weight: 600;
+  color: #d1d5db;
+  padding: 0 6px;
+  min-width: 44px;
+  text-align: center;
+  user-select: none;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+
+.action-btn.secondary {
+  background-color: var(--bg-btn);
+  border-color: var(--border-main);
+  color: #e5e7eb;
+}
+
+.action-btn.secondary:hover {
+  background-color: var(--bg-btn-hover);
+  color: #ffffff;
+}
+
+.action-btn.primary {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+}
+
+.action-btn.primary:hover {
+  background-color: var(--accent-primary-hover);
+}
+
+.canvas-viewport {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px;
+  position: relative;
+  background: 
+    radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--bg-workspace);
+}
+
+.image-wrapper {
+  display: inline-block;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #ffffff;
+  transition: width 0.1s ease-out;
+  cursor: zoom-in;
+}
+
+.image-wrapper.zoomed-100 {
+  cursor: zoom-out;
+}
+
+.preview-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+}

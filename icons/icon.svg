@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1e3a8a" />
+    </linearGradient>
+    <radialGradient id="lens-optic" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#7dd3fc" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="36" y="36" width="440" height="440" rx="104" ry="104" fill="url(#bg-grad)" filter="url(#shadow)" stroke="rgba(255,255,255,0.2)" stroke-width="6" />
+
+  <!-- Flash Indicator Dot -->
+  <circle cx="364" cy="148" r="18" fill="#f59e0b" />
+
+  <!-- Viewfinder Crop Brackets -->
+  <!-- Top-Left -->
+  <path d="M 124 186 L 124 140 C 124 131 131 124 140 124 L 186 124" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Top-Right -->
+  <path d="M 326 124 L 372 124 C 381 124 388 131 388 140 L 388 186" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Bottom-Left -->
+  <path d="M 124 326 L 124 372 C 124 381 131 388 140 388 L 186 388" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Bottom-Right -->
+  <path d="M 388 326 L 388 372 C 388 381 381 388 372 388 L 326 388" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Outer Aperture Ring -->
+  <circle cx="256" cy="256" r="76" fill="none" stroke="#ffffff" stroke-width="18" />
+
+  <!-- Dark Lens Chamber -->
+  <circle cx="256" cy="256" r="58" fill="#0f172a" />
+
+  <!-- Cyan Inner Optic -->
+  <circle cx="256" cy="256" r="32" fill="url(#lens-optic)" />
+
+  <!-- Specular Lens Glint -->
+  <circle cx="244" cy="244" r="9" fill="#ffffff" opacity="0.9" />
+</svg>

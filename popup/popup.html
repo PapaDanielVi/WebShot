@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebShot</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="header">
+      <div class="logo-group">
+        <img src="../icons/icon32.png" alt="WebShot Logo" class="logo-icon">
+        <span class="app-name">WebShot</span>
+      </div>
+      <span class="version-pill">v1.0</span>
+    </header>
+
+    <!-- Main View with Capture Modes -->
+    <div id="main-view">
+      <div class="actions">
+        <!-- Full Page -->
+        <button id="btn-full-page" class="action-card primary">
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <path d="M12 6v12"/>
+              <path d="m8 14 4 4 4-4"/>
+              <path d="m8 10 4-4 4 4"/>
+            </svg>
+          </div>
+          <div class="card-text">
+            <span class="card-title">Full Page</span>
+            <span class="card-subtitle">Scroll and capture the entire website</span>
+          </div>
+        </button>
+
+        <!-- Selected Area -->
+        <button id="btn-select-area" class="action-card">
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2v4H2"/>
+              <path d="M18 2v4h4"/>
+              <path d="M6 22v-4H2"/>
+              <path d="M18 22v-4h4"/>
+              <rect x="7" y="7" width="10" height="10" rx="1" stroke-dasharray="2 2"/>
+            </svg>
+          </div>
+          <div class="card-text">
+            <span class="card-title">Select Area</span>
+            <span class="card-subtitle">Drag a rectangle to crop a section</span>
+          </div>
+        </button>
+
+        <!-- Visible Screen -->
+        <button id="btn-visible-area" class="action-card">
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="14" x="2" y="3" rx="2"/>
+              <line x1="8" x2="16" y1="21" y2="21"/>
+              <line x1="12" x2="12" y1="17" y2="21"/>
+            </svg>
+          </div>
+          <div class="card-text">
+            <span class="card-title">Visible Screen</span>
+            <span class="card-subtitle">Capture only the current viewport</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Preferences -->
+      <div class="options-container">
+        <label class="toggle-option">
+          <input type="checkbox" id="chk-auto-download">
+          <span class="option-label">Auto-download screenshot file</span>
+        </label>
+      </div>
+
+      <footer class="footer">
+        <span>Tip: Press ESC to cancel selection</span>
+      </footer>
+    </div>
+
+    <!-- Progress View during Full Page capture -->
+    <div id="progress-view" class="progress-view hidden">
+      <div class="progress-card">
+        <div class="progress-header">
+          <div class="spinner"></div>
+          <div class="progress-info">
+            <span class="progress-title">Capturing Full Page</span>
+            <span id="progress-status-text" class="progress-status-text">Preparing webpage...</span>
+          </div>
+        </div>
+
+        <div class="progress-track">
+          <div id="progress-bar-fill" class="progress-fill" style="width: 0%;"></div>
+        </div>
+
+        <div class="progress-stats">
+          <span id="progress-slice-count">Slice 0 of 0</span>
+          <span id="progress-percent">0%</span>
+        </div>
+
+        <button id="btn-cancel-capture" class="cancel-btn">Cancel Capture</button>
+      </div>
+    </div>
+
+    <!-- Error message notice -->
+    <div id="status-box" class="status-box hidden"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
