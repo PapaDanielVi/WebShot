@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WebShot - Full Page & Area Screenshot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Capture full page scrolling screenshots, selected rectangular areas, or the visible screen.",
   "permissions": [
     "activeTab",

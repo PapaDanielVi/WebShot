@@ -3,6 +3,55 @@
 const inMemoryScreenshots = new Map();
 const activeCaptures = new Map();
 
+// Rate limiting for chrome.tabs.captureVisibleTab.
+// Chromium caps captureVisibleTab at chrome.tabs.MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND = 2.
+// Spacing calls by at least 700ms ensures we never exceed the rolling quota.
+const CAPTURE_MIN_INTERVAL_MS = 700;
+let lastCaptureTime = 0;
+let captureQueue = Promise.resolve();
+
+async function captureVisibleTabThrottled(windowId, options = { format: 'png' }, shouldAbort = null) {
+  const task = async () => {
+    if (shouldAbort && shouldAbort()) {
+      throw new Error('Capture cancelled.');
+    }
+
+    const elapsed = Date.now() - lastCaptureTime;
+    if (elapsed < CAPTURE_MIN_INTERVAL_MS) {
+      await new Promise((resolve) => setTimeout(resolve, CAPTURE_MIN_INTERVAL_MS - elapsed));
+    }
+
+    if (shouldAbort && shouldAbort()) {
+      throw new Error('Capture cancelled.');
+    }
+
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        lastCaptureTime = Date.now();
+        const dataUrl = typeof windowId === 'number'
+          ? await chrome.tabs.captureVisibleTab(windowId, options)
+          : await chrome.tabs.captureVisibleTab(options);
+        return dataUrl;
+      } catch (err) {
+        const isQuota = err?.message && err.message.includes('MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND');
+        if (isQuota && attempt < maxAttempts) {
+          if (shouldAbort && shouldAbort()) {
+            throw new Error('Capture cancelled.');
+          }
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          continue;
+        }
+        throw err;
+      }
+    }
+  };
+
+  const nextPromise = captureQueue.then(task, task);
+  captureQueue = nextPromise.catch(() => {});
+  return nextPromise;
+}
+
 // Listen for messages from popup or content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
@@ -118,7 +167,7 @@ async function handleGetActiveCaptureStatus() {
 async function handleCaptureVisible() {
   try {
     const tab = await getActiveTab();
-    const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+    const dataUrl = await captureVisibleTabThrottled(tab.windowId, { format: 'png' });
     const filename = `screenshot-${getSanitizedDomain(tab.url)}-${Date.now()}.png`;
 
     await processAndPresentScreenshot({
@@ -149,7 +198,7 @@ async function handleStartAreaSelection() {
 async function handleCropVisibleArea(tab, rect) {
   try {
     const activeTab = tab || (await getActiveTab());
-    const rawDataUrl = await chrome.tabs.captureVisibleTab(activeTab.windowId, { format: 'png' });
+    const rawDataUrl = await captureVisibleTabThrottled(activeTab.windowId, { format: 'png' });
 
     const croppedDataUrl = await cropImage(rawDataUrl, rect);
     const filename = `area-${getSanitizedDomain(activeTab.url)}-${Date.now()}.png`;
@@ -261,10 +310,20 @@ async function handleStartFullPage() {
         total: effectiveSteps.length
       });
 
-      // Settle time for rendering
-      await new Promise((r) => setTimeout(r, 120));
+      if (activeCaptures.get(tabId)?.cancelled) {
+        await chrome.tabs.sendMessage(tabId, { action: 'cleanup_full_page' });
+        activeCaptures.delete(tabId);
+        try {
+          await chrome.action.setBadgeText({ text: '', tabId });
+        } catch (_) {}
+        return { success: false, error: 'Capture cancelled.' };
+      }
 
-      const sliceDataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+      const sliceDataUrl = await captureVisibleTabThrottled(
+        tab.windowId,
+        { format: 'png' },
+        () => activeCaptures.get(tabId)?.cancelled
+      );
       slices.push({
         y: effectiveSteps[i],
         dataUrl: sliceDataUrl
