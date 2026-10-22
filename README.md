@@ -63,8 +63,7 @@ To install WebShot manually in developer mode:
 
 4. Click the Load unpacked button in the top-left toolbar.
 
-5. Select the repository directory:
-   `/Users/mk/Documents/chrome_extentions/website_screen_shot`
+5. Select the cloned repository directory (for example, `~/Documents/chrome_extentions/website_screen_shot` or relative `./WebShot`).
 
 6. WebShot will appear in your extensions list. Pin it to your Chrome toolbar for quick access.
 
