@@ -6,6 +6,10 @@
 
 A Google Chrome extension built on Manifest V3 for capturing full-page scrolling screenshots, cropped rectangular selections, and visible browser viewports with zero DOM pollution.
 
+<p align="center">
+  <img src="screenshots/popup.png" alt="WebShot Extension Popup" width="320">
+</p>
+
 Author: Daniel ([github.com/PapaDanielVi](https://github.com/PapaDanielVi))
 
 ## Table of Contents
@@ -126,6 +130,8 @@ website_screen_shot/
 │   ├── icon32.png             # Retina toolbar icon (32x32)
 │   ├── icon48.png             # Extension management icon (48x48)
 │   └── icon128.png            # Chrome Web Store icon (128x128)
+├── screenshots/
+│   └── popup.png              # Extension popup interface preview
 └── scripts/
     └── generate_icons.py      # Standalone icon generator script
 ```
@@ -147,7 +153,7 @@ make lint
 # Run icon generation and validation checks for local testing
 make dev
 
-# Build a clean distribution zip archive in dist/website_screen_shot-v1.0.0.zip
+# Build a clean distribution zip archive in dist/website_screen_shot-v1.0.2.zip
 make build
 
 # Remove build artifacts and temporary files
@@ -164,7 +170,7 @@ To publish the extension on the Chrome Web Store:
    ```bash
    make build
    ```
-   The archive will be created at `dist/website_screen_shot-v1.0.0.zip`.
+   The archive will be created at `dist/website_screen_shot-v1.0.2.zip`.
 
 2. Log in to the [Chrome Web Store Developer Console](https://chrome.google.com/webstore/devconsole).
 
