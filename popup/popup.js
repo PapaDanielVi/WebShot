@@ -4,10 +4,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const btnFullPage = document.getElementById('btn-full-page');
   const btnSelectArea = document.getElementById('btn-select-area');
+  const btnSelectElement = document.getElementById('btn-select-element');
   const btnVisibleArea = document.getElementById('btn-visible-area');
   const chkAutoDownload = document.getElementById('chk-auto-download');
   const statusBox = document.getElementById('status-box');
 
+  const progressTitle = document.getElementById('progress-title');
   const progressBarFill = document.getElementById('progress-bar-fill');
   const progressStatusText = document.getElementById('progress-status-text');
   const progressSliceCount = document.getElementById('progress-slice-count');
@@ -32,8 +34,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     statusBox.classList.add('hidden');
   }
 
-  function showProgressView() {
+  function showProgressView(title = 'Capturing Full Page') {
     clearError();
+    progressTitle.textContent = title;
     mainView.classList.add('hidden');
     progressView.classList.remove('hidden');
   }
@@ -41,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function showMainView() {
     progressView.classList.add('hidden');
     mainView.classList.remove('hidden');
+    progressTitle.textContent = 'Capturing Full Page';
     progressBarFill.style.width = '0%';
     progressSliceCount.textContent = 'Slice 0 of 0';
     progressPercent.textContent = '0%';
@@ -50,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Listen for progress updates from background service worker
   chrome.runtime.onMessage.addListener((message) => {
     if (message.action === 'capture_progress') {
-      showProgressView();
+      showProgressView(message.title || 'Capturing Full Page');
       progressStatusText.textContent = 'Scrolling and capturing...';
       progressSliceCount.textContent = `Slice ${message.current} of ${message.total}`;
       progressPercent.textContent = `${message.percent}%`;
@@ -62,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const status = await chrome.runtime.sendMessage({ action: 'get_active_capture_status' });
     if (status && status.inProgress) {
-      showProgressView();
+      showProgressView(status.title || 'Capturing Full Page');
       progressSliceCount.textContent = `Slice ${status.current} of ${status.total}`;
       progressPercent.textContent = `${status.percent}%`;
       progressBarFill.style.width = `${status.percent}%`;
@@ -114,7 +118,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 3. Visible Area
+  // 3. Select Element
+  btnSelectElement.addEventListener('click', async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'start_element_selection' });
+      if (response && !response.success) {
+        showError(response.error || 'Failed to start element selection.');
+        return;
+      }
+      window.close();
+    } catch (err) {
+      showError(err.message || 'Error starting element selection.');
+    }
+  });
+
+  // 4. Visible Area
   btnVisibleArea.addEventListener('click', async () => {
     try {
       btnVisibleArea.disabled = true;

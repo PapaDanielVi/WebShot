@@ -27,6 +27,7 @@ Author: Daniel ([github.com/PapaDanielVi](https://github.com/PapaDanielVi))
 
 - Full-page capture: Measures document dimensions, steps through scroll increments, temporarily disables smooth scrolling, suppresses sticky headers and scrollbars, and stitches the slices into one continuous high-resolution image using an `OffscreenCanvas`.
 - Selected area capture: Injects a crop overlay inside a Shadow DOM so the target website styles cannot interfere. Displays real-time pixel dimensions while dragging.
+- Selected element capture: Inspect-element style hover highlighter inside an isolated Shadow DOM. Displays tag, ID, classes, and dimensions while hovering, supports Up/Down arrow parent/child DOM navigation, and automatically scrolls and stitches elements taller than the viewport.
 - Visible viewport capture: Instant capture of the visible screen area without scrolling.
 - Zero DOM pollution during capture: Progress is reported inside the extension popup and on the Chrome toolbar badge. No floating cards or overlays are injected onto the webpage during full-page capture, preventing the extension from capturing itself.
 - High-DPI and Retina display support: Uses `window.devicePixelRatio` across cropping and stitching coordinates to preserve native pixel resolution.
@@ -51,6 +52,13 @@ Capturing an entire webpage requires handling several browser rendering behavior
 2. A semi-transparent backdrop with crosshair cursor tracks `mousedown`, `mousemove`, and `mouseup` events.
 3. Box shadows around the selection rectangle create a cutout preview with a live dimension badge.
 4. On release, the overlay element is removed from the DOM immediately. After two animation frames to ensure screen repaint, the background worker captures the viewport and crops to the selection coordinates multiplied by the device pixel ratio.
+
+### Selected Element Capture
+
+1. Attaches a pointer-transparent Shadow DOM inspector overlay so `elementFromPoint` (including open Shadow DOMs) resolves the exact component under the cursor.
+2. Intercepts mouse clicks in the capture phase so clicking buttons or links selects them without triggering page navigation.
+3. Supports keyboard refinement (`ArrowUp` for parent element, `ArrowDown` for child element, `Enter` to capture).
+4. Removes the overlay before capturing. Elements inside the viewport are cropped directly; off-screen or tall components are automatically scrolled, stitched onto an `OffscreenCanvas`, and cropped to exact element bounds while suppressing unrelated sticky overlays.
 
 ## Manual Installation
 
@@ -82,6 +90,7 @@ To install WebShot manually in developer mode:
 3. Select your capture mode:
    - Full Page: Automatically scrolls down the page and opens the full composite image in the preview tab.
    - Select Area: Darkens the screen. Click and drag over the area you want to capture, then release.
+   - Select Element: Hover over any HTML component to inspect it (use Up/Down arrows to move between parent and child nodes), then click or press Enter to capture it.
    - Visible Screen: Captures what is visible in your browser window right now.
 4. The capture opens in the preview tab where you can inspect, zoom, copy, or download it.
 
@@ -91,8 +100,11 @@ To install WebShot manually in developer mode:
 
 | Key | Action |
 | --- | --- |
-| `ESC` | Cancel selection and remove overlay |
+| `ESC` | Cancel area or element selection and remove overlay |
 | Right-click | Cancel selection |
+| `ArrowUp` | Select parent element (Element mode) |
+| `ArrowDown` | Select child element (Element mode) |
+| `Enter` | Capture highlighted element (Element mode) |
 
 ### Preview Workspace (in viewer tab)
 
@@ -153,7 +165,7 @@ make lint
 # Run icon generation and validation checks for local testing
 make dev
 
-# Build a clean distribution zip archive in dist/website_screen_shot-v1.0.2.zip
+# Build a clean distribution zip archive in dist/website_screen_shot-v1.1.0.zip
 make build
 
 # Remove build artifacts and temporary files
@@ -170,7 +182,7 @@ To publish the extension on the Chrome Web Store:
    ```bash
    make build
    ```
-   The archive will be created at `dist/website_screen_shot-v1.0.2.zip`.
+   The archive will be created at `dist/website_screen_shot-v1.1.0.zip`.
 
 2. Log in to the [Chrome Web Store Developer Console](https://chrome.google.com/webstore/devconsole).
 

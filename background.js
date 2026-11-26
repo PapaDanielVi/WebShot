@@ -67,6 +67,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleCropVisibleArea(sender.tab, message.rect).then(sendResponse);
       return true;
 
+    case 'start_element_selection':
+      handleStartElementSelection().then(sendResponse);
+      return true;
+
+    case 'capture_selected_element':
+      handleCaptureSelectedElement(sender.tab, message).then(sendResponse);
+      return true;
+
     case 'start_full_page':
       handleStartFullPage().then(sendResponse);
       return true;
@@ -156,6 +164,7 @@ async function handleGetActiveCaptureStatus() {
     const state = activeCaptures.get(tab.id);
     return {
       inProgress: !state.cancelled,
+      title: state.title || 'Capturing Full Page',
       current: state.current,
       total: state.total,
       percent: state.percent
@@ -213,6 +222,213 @@ async function handleCropVisibleArea(tab, rect) {
 
     return { success: true };
   } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+async function handleStartElementSelection() {
+  try {
+    const tab = await getActiveTab();
+    await ensureContentScriptInjected(tab.id);
+    await chrome.tabs.sendMessage(tab.id, { action: 'start_element_selection' });
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+function getSanitizedTag(tag) {
+  if (!tag || typeof tag !== 'string') return 'element';
+  const cleaned = tag.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  return cleaned || 'element';
+}
+
+async function handleCaptureSelectedElement(tab, payload) {
+  let tabId = null;
+  let needsCleanup = false;
+  try {
+    const activeTab = tab || (await getActiveTab());
+    tabId = activeTab.id;
+    const tag = getSanitizedTag(payload.tag);
+    const filename = `element-${tag}-${getSanitizedDomain(activeTab.url)}-${Date.now()}.png`;
+
+    // Fast path: element is fixed or already fully inside the current viewport
+    if (payload.mode === 'viewport' && payload.rect) {
+      const rawDataUrl = await captureVisibleTabThrottled(activeTab.windowId, { format: 'png' });
+      const croppedDataUrl = await cropImage(rawDataUrl, payload.rect);
+
+      await processAndPresentScreenshot({
+        dataUrl: croppedDataUrl,
+        sourceUrl: activeTab.url,
+        pageTitle: activeTab.title || 'Element Screenshot',
+        filename,
+        type: 'element'
+      });
+
+      return { success: true };
+    }
+
+    // Scroll/stitch path for off-screen or multi-screen elements
+    needsCleanup = true;
+    const metrics = await chrome.tabs.sendMessage(tabId, { action: 'prepare_element_capture' });
+    if (!metrics) {
+      throw new Error('Failed to measure selected element.');
+    }
+
+    const { elemDocX, elemDocY, elemWidth, elemHeight, viewportWidth, viewportHeight, dpr } = metrics;
+
+    // Build horizontal scroll offsets
+    const xSteps = [];
+    if (elemWidth <= viewportWidth) {
+      const xOffset = elemDocX + elemWidth <= viewportWidth ? 0 : Math.max(0, Math.floor(elemDocX));
+      xSteps.push(xOffset);
+    } else {
+      let curX = Math.max(0, Math.floor(elemDocX));
+      const endX = elemDocX + elemWidth;
+      while (curX < endX && xSteps.length < 10) {
+        xSteps.push(curX);
+        if (curX + viewportWidth >= endX) break;
+        curX += viewportWidth;
+      }
+    }
+
+    // Build vertical scroll offsets
+    const ySteps = [];
+    if (elemHeight <= viewportHeight) {
+      const centeredY = Math.max(0, Math.round(elemDocY - (viewportHeight - elemHeight) / 2));
+      ySteps.push(centeredY);
+    } else {
+      let curY = Math.max(0, Math.floor(elemDocY));
+      const endY = elemDocY + elemHeight;
+      while (curY < endY && ySteps.length < 40) {
+        ySteps.push(curY);
+        if (curY + viewportHeight >= endY) break;
+        curY += viewportHeight;
+      }
+    }
+
+    const stepCoords = [];
+    for (const x of xSteps) {
+      for (const y of ySteps) {
+        stepCoords.push({ x, y });
+        if (stepCoords.length >= 40) break;
+      }
+      if (stepCoords.length >= 40) break;
+    }
+
+    const isMultiSlice = stepCoords.length > 1;
+    if (isMultiSlice) {
+      activeCaptures.set(tabId, {
+        cancelled: false,
+        title: 'Capturing Element',
+        current: 0,
+        total: stepCoords.length,
+        percent: 0
+      });
+      try {
+        await chrome.action.setBadgeText({ text: '0%', tabId });
+        await chrome.action.setBadgeBackgroundColor({ color: '#2563eb', tabId });
+      } catch (_) {}
+    }
+
+    const slices = [];
+    for (let i = 0; i < stepCoords.length; i++) {
+      if (isMultiSlice && activeCaptures.get(tabId)?.cancelled) {
+        await chrome.tabs.sendMessage(tabId, { action: 'cleanup_element_capture' });
+        needsCleanup = false;
+        activeCaptures.delete(tabId);
+        try {
+          await chrome.action.setBadgeText({ text: '', tabId });
+        } catch (_) {}
+        return { success: false, error: 'Capture cancelled.' };
+      }
+
+      if (isMultiSlice) {
+        const percent = Math.round(((i + 1) / stepCoords.length) * 100);
+        activeCaptures.set(tabId, {
+          cancelled: false,
+          title: 'Capturing Element',
+          current: i + 1,
+          total: stepCoords.length,
+          percent
+        });
+        try {
+          await chrome.action.setBadgeText({ text: `${percent}%`, tabId });
+        } catch (_) {}
+        chrome.runtime.sendMessage({
+          action: 'capture_progress',
+          title: 'Capturing Element',
+          current: i + 1,
+          total: stepCoords.length,
+          percent
+        }).catch(() => {});
+      }
+
+      const stepInfo = await chrome.tabs.sendMessage(tabId, {
+        action: 'scroll_element_step',
+        x: stepCoords[i].x,
+        y: stepCoords[i].y,
+        index: i
+      });
+
+      if (!stepInfo) {
+        throw new Error('Selected element is no longer available.');
+      }
+
+      if (isMultiSlice && activeCaptures.get(tabId)?.cancelled) {
+        await chrome.tabs.sendMessage(tabId, { action: 'cleanup_element_capture' });
+        needsCleanup = false;
+        activeCaptures.delete(tabId);
+        try {
+          await chrome.action.setBadgeText({ text: '', tabId });
+        } catch (_) {}
+        return { success: false, error: 'Capture cancelled.' };
+      }
+
+      const sliceDataUrl = await captureVisibleTabThrottled(
+        activeTab.windowId,
+        { format: 'png' },
+        () => isMultiSlice && activeCaptures.get(tabId)?.cancelled
+      );
+
+      slices.push({
+        dataUrl: sliceDataUrl,
+        ...stepInfo
+      });
+    }
+
+    await chrome.tabs.sendMessage(tabId, { action: 'cleanup_element_capture' });
+    needsCleanup = false;
+    if (isMultiSlice) {
+      activeCaptures.delete(tabId);
+      try {
+        await chrome.action.setBadgeText({ text: '', tabId });
+      } catch (_) {}
+    }
+
+    const finalDataUrl = await stitchElementSlices(slices, elemWidth, elemHeight, dpr);
+
+    await processAndPresentScreenshot({
+      dataUrl: finalDataUrl,
+      sourceUrl: activeTab.url,
+      pageTitle: activeTab.title || 'Element Screenshot',
+      filename,
+      type: 'element'
+    });
+
+    return { success: true };
+  } catch (err) {
+    if (tabId) {
+      activeCaptures.delete(tabId);
+      try {
+        await chrome.action.setBadgeText({ text: '', tabId });
+      } catch (_) {}
+      if (needsCleanup) {
+        try {
+          await chrome.tabs.sendMessage(tabId, { action: 'cleanup_element_capture' });
+        } catch (_) {}
+      }
+    }
     return { success: false, error: err.message };
   }
 }
@@ -411,6 +627,47 @@ async function stitchSlices(slices, totalHeight, viewportWidth, dpr) {
     const dy = Math.round(slice.y * dpr);
 
     ctx.drawImage(bmp, 0, dy);
+    bmp.close();
+  }
+
+  const stitchedBlob = await canvas.convertToBlob({ type: 'image/png' });
+  return await blobToDataUrl(stitchedBlob);
+}
+
+async function stitchElementSlices(slices, elemWidth, elemHeight, dpr) {
+  const targetWidth = Math.min(Math.max(1, Math.round(elemWidth * dpr)), 32768);
+  const targetHeight = Math.min(Math.max(1, Math.round(elemHeight * dpr)), 32768);
+
+  const canvas = new OffscreenCanvas(targetWidth, targetHeight);
+  const ctx = canvas.getContext('2d');
+
+  for (const slice of slices) {
+    const res = await fetch(slice.dataUrl);
+    const blob = await res.blob();
+    const bmp = await createImageBitmap(blob);
+
+    const visLeft = Math.max(0, slice.rectLeft);
+    const visTop = Math.max(0, slice.rectTop);
+    const visRight = Math.min(slice.viewportWidth, slice.rectLeft + slice.rectWidth);
+    const visBottom = Math.min(slice.viewportHeight, slice.rectTop + slice.rectHeight);
+
+    if (visRight > visLeft && visBottom > visTop) {
+      const sx = Math.max(0, Math.round(visLeft * dpr));
+      const sy = Math.max(0, Math.round(visTop * dpr));
+      const dx = Math.max(0, Math.round((visLeft - slice.rectLeft) * dpr));
+      const dy = Math.max(0, Math.round((visTop - slice.rectTop) * dpr));
+
+      const rawSw = Math.round((visRight - visLeft) * dpr);
+      const rawSh = Math.round((visBottom - visTop) * dpr);
+
+      const sw = Math.min(rawSw, bmp.width - sx, targetWidth - dx);
+      const sh = Math.min(rawSh, bmp.height - sy, targetHeight - dy);
+
+      if (sw > 0 && sh > 0) {
+        ctx.drawImage(bmp, sx, sy, sw, sh, dx, dy, sw, sh);
+      }
+    }
+
     bmp.close();
   }
 

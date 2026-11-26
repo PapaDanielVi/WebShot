@@ -13,7 +13,7 @@
         <img src="../icons/icon32.png" alt="WebShot Logo" class="logo-icon">
         <span class="app-name">WebShot</span>
       </div>
-      <span class="version-pill">v1.0</span>
+      <span class="version-pill">v1.1</span>
     </header>
 
     <!-- Main View with Capture Modes -->
@@ -52,6 +52,20 @@
           </div>
         </button>
 
+        <!-- Select Element -->
+        <button id="btn-select-element" class="action-card">
+          <div class="card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
+              <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
+            </svg>
+          </div>
+          <div class="card-text">
+            <span class="card-title">Select Element</span>
+            <span class="card-subtitle">Inspect and capture an HTML component</span>
+          </div>
+        </button>
+
         <!-- Visible Screen -->
         <button id="btn-visible-area" class="action-card">
           <div class="card-icon">
@@ -87,7 +101,7 @@
         <div class="progress-header">
           <div class="spinner"></div>
           <div class="progress-info">
-            <span class="progress-title">Capturing Full Page</span>
+            <span id="progress-title" class="progress-title">Capturing Full Page</span>
             <span id="progress-status-text" class="progress-status-text">Preparing webpage...</span>
           </div>
         </div>
